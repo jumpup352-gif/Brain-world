@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>脳年齢チェック | 無料</title>
+<meta name="description" content="4つのテストであなたの脳年齢を無料で測定。スマホで簡単。">
+<style>
+  html, body { margin:0; padding:0; }
+  #root { min-height: 100vh; }
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback } = React;
+
+
+const style = `
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Zen+Maru+Gothic:wght@700;900&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: #FFF8F0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+    min-height: 100vh;
+    background: #FFF8F0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.3;
+    pointer-events: none;
+  }
+  .blob1 { width: 250px; height: 250px; background: #FFB347; top: -60px; left: -60px; }
+  .blob2 { width: 200px; height: 200px; background: #FF6B6B; bottom: 40px; right: -40px; }
+  .blob3 { width: 180px; height: 180px; background: #4ECDC4; top: 40%; left: -50px; }
+
+  .card {
+    width: 100%;
+    background: white;
+    border-radius: 28px;
+    padding: 32px 24px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+    position: relative;
+    z-index: 1;
+    text-align: center;
+  }
+
+  .badge {
+    display: inline-block;
+    background: #FFF0DC;
+    color: #E8820C;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+  }
+
+  h1 {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: #1A1A2E;
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+
+  h2 {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1A1A2E;
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+
+  .desc {
+    font-size: 15px;
+    color: #666;
+    line-height: 1.7;
+    margin-bottom: 24px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 18px;
+    border: none;
+    border-radius: 16px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    margin-bottom: 12px;
+  }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #FF8C42, #FF6B35);
+    color: white;
+    box-shadow: 0 6px 20px rgba(255,107,53,0.35);
+  }
+
+  .btn-secondary {
+    background: #F5F5F5;
+    color: #444;
+  }
+
+  .level-btn {
+    width: 100%;
+    border: 2px solid #EEE;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 14px;
+    background: white;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.15s;
+  }
+  .level-btn:active { transform: scale(0.98); }
+  .level-1 { border-color: #2ECC71; }
+  .level-1:active { background: #E8F8F0; }
+  .level-2 { border-color: #FF8C42; }
+  .level-2:active { background: #FFF0DC; }
+  .level-3 { border-color: #E74C3C; }
+  .level-3:active { background: #FEEAEA; }
+
+  .level-icon {
+    font-size: 38px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .level-text { flex: 1; }
+  .level-title {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 19px;
+    font-weight: 900;
+    color: #1A1A2E;
+    margin-bottom: 2px;
+  }
+  .level-sub {
+    font-size: 13px;
+    color: #888;
+    line-height: 1.5;
+  }
+  .level-stars { font-size: 14px; margin-top: 4px; }
+
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #F0F0F0;
+    border-radius: 4px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #FF8C42, #FF6B35);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+
+  .step-label {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 8px;
+    letter-spacing: 0.05em;
+  }
+  .level-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-left: 6px;
+    color: white;
+  }
+  .pill-1 { background: #2ECC71; }
+  .pill-2 { background: #FF8C42; }
+  .pill-3 { background: #E74C3C; }
+
+  .test-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .restart-btn {
+    border: none;
+    background: #F5F5F5;
+    color: #888;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .restart-btn:active { background: #EAEAEA; }
+
+  .confirm-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    padding: 24px;
+    border-radius: 28px;
+  }
+  .confirm-box {
+    background: white;
+    border-radius: 22px;
+    padding: 28px 22px;
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+  }
+  .confirm-title {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 19px;
+    font-weight: 900;
+    color: #1A1A2E;
+    margin-bottom: 8px;
+  }
+  .confirm-text {
+    font-size: 14px;
+    color: #777;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .confirm-row { display: flex; gap: 10px; }
+  .confirm-row button {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .confirm-cancel { background: #F0F0F0; color: #555; }
+  .confirm-ok { background: #FF6B35; color: white; }
+
+  .big-number {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 72px;
+    font-weight: 900;
+    color: #FF6B35;
+    line-height: 1;
+    margin: 20px 0;
+  }
+
+  .timer-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: #FFF0DC;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px auto;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 48px;
+    font-weight: 900;
+    color: #FF6B35;
+  }
+
+  .memory-grid {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 20px 0;
+  }
+  .memory-item {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: 700;
+    background: #FFF0DC;
+    color: #FF6B35;
+    font-family: 'Zen Maru Gothic', sans-serif;
+  }
+
+  .answer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .answer-btn {
+    padding: 20px 10px;
+    border: 2px solid #EEE;
+    border-radius: 14px;
+    background: white;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #1A1A2E;
+  }
+  .answer-btn:active { background: #FFF0DC; border-color: #FF8C42; }
+  .answer-btn.correct { background: #E8F8F0; border-color: #2ECC71; color: #27AE60; }
+  .answer-btn.wrong { background: #FEE; border-color: #E74C3C; color: #E74C3C; }
+
+  .reaction-target {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px auto;
+    cursor: pointer;
+    transition: transform 0.1s;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+  }
+  .reaction-target:active { transform: scale(0.95); }
+
+  .result-age {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 88px;
+    font-weight: 900;
+    color: #FF6B35;
+    line-height: 1;
+    margin: 16px 0 4px;
+  }
+  .result-label {
+    font-size: 20px;
+    color: #888;
+    margin-bottom: 20px;
+  }
+  .result-comment {
+    background: #FFF0DC;
+    border-radius: 16px;
+    padding: 16px;
+    font-size: 15px;
+    color: #555;
+    line-height: 1.7;
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  .score-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #F0F0F0;
+    font-size: 14px;
+    color: #666;
+  }
+  .score-row span:last-child { font-weight: 700; color: #1A1A2E; }
+
+  .stroop-word {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-size: 56px;
+    font-weight: 900;
+    margin: 20px 0;
+    line-height: 1;
+  }
+  .color-grid {
+    display: grid;
+    gap: 10px;
+    margin: 10px 0;
+  }
+  .color-btn {
+    padding: 18px 8px;
+    border: none;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    color: white;
+    transition: transform 0.1s;
+  }
+  .color-btn:active { transform: scale(0.95); }
+
+  .feedback {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 8px 0;
+    min-height: 36px;
+  }
+  .feedback.ok { color: #2ECC71; }
+  .feedback.ng { color: #E74C3C; }
+`;
+
+// ====== レベル設定 ======
+// すべてのテストのパラメータをレベルごとにここで一元管理
+const LEVEL_CONFIG = {
+  1: {
+    name: "やさしい",
+    icon: "🟢",
+    sub: "誰でもできる入門レベル",
+    stars: "★☆☆",
+    pill: "pill-1",
+    reaction: { rounds: 3, feint: false },
+    memory: { digits: [3, 3, 4], showSeconds: 3 },
+    calc: { count: 3, type: "easy" },
+    stroop: { count: 4, colors: 3, mismatch: false, limit: null },
+    ageBase: 22, ageMax: 70,
+  },
+  2: {
+    name: "ふつう",
+    icon: "🟠",
+    sub: "少し集中が必要なレベル",
+    stars: "★★☆",
+    pill: "pill-2",
+    reaction: { rounds: 3, feint: false },
+    memory: { digits: [4, 5, 5], showSeconds: 3 },
+    calc: { count: 4, type: "normal" },
+    stroop: { count: 5, colors: 4, mismatch: true, limit: null },
+    ageBase: 25, ageMax: 75,
+  },
+  3: {
+    name: "むずかしい",
+    icon: "🔴",
+    sub: "ひっかけ・制限時間ありの本気モード",
+    stars: "★★★",
+    pill: "pill-3",
+    reaction: { rounds: 4, feint: true },
+    memory: { digits: [5, 6, 7], showSeconds: 2 },
+    calc: { count: 5, type: "hard" },
+    stroop: { count: 7, colors: 5, mismatch: true, limit: 4 },
+    ageBase: 30, ageMax: 80,
+  },
+};
+
+// ====== 問題データ ======
+const CALC_BANK = {
+  easy: [
+    { q: "5 + 8", a: 13 }, { q: "12 + 7", a: 19 }, { q: "15 − 6", a: 9 },
+    { q: "9 + 6", a: 15 }, { q: "20 − 8", a: 12 }, { q: "7 + 7", a: 14 },
+    { q: "18 − 9", a: 9 }, { q: "4 × 3", a: 12 },
+  ],
+  normal: [
+    { q: "13 + 28", a: 41 }, { q: "76 − 39", a: 37 }, { q: "6 × 8", a: 48 },
+    { q: "81 ÷ 9", a: 9 }, { q: "47 + 56", a: 103 }, { q: "63 − 27", a: 36 },
+    { q: "7 × 9", a: 63 }, { q: "56 ÷ 7", a: 8 },
+  ],
+  hard: [
+    { q: "47 + 68 − 29", a: 86 }, { q: "13 × 7", a: 91 }, { q: "96 ÷ 8 + 17", a: 29 },
+    { q: "24 × 6 − 38", a: 106 }, { q: "8 × 9 + 47", a: 119 }, { q: "132 − 57 + 28", a: 103 },
+    { q: "17 × 4", a: 68 }, { q: "144 ÷ 12 × 6", a: 72 },
+  ],
+};
+
+const ALL_COLORS = [
+  { name: "あか", hex: "#E74C3C" },
+  { name: "あお", hex: "#3498DB" },
+  { name: "みどり", hex: "#27AE60" },
+  { name: "きいろ", hex: "#F1C40F" },
+  { name: "むらさき", hex: "#9B59B6" },
+];
+
+function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+function generateCalcOptions(correct, type) {
+  const spread = type === "hard" ? 24 : type === "normal" ? 14 : 8;
+  const opts = new Set([correct]);
+  let guard = 0;
+  while (opts.size < 4 && guard < 100) {
+    guard++;
+    const delta = Math.floor(Math.random() * spread) - spread / 2;
+    const val = correct + Math.round(delta);
+    if (val !== correct && val > 0) opts.add(val);
+  }
+  return shuffle([...opts]);
+}
+
+// ストループ問題を生成（mismatch=trueなら文字と色を食い違わせる）
+function buildStroopItems(level) {
+  const cfg = LEVEL_CONFIG[level].stroop;
+  const pool = ALL_COLORS.slice(0, cfg.colors);
+  const items = [];
+  for (let i = 0; i < cfg.count; i++) {
+    const wordColor = pool[Math.floor(Math.random() * pool.length)];
+    let displayColor;
+    if (cfg.mismatch) {
+      // 文字の意味と違う色にする
+      const others = pool.filter(c => c.name !== wordColor.name);
+      displayColor = others[Math.floor(Math.random() * others.length)];
+    } else {
+      // やさしい：文字と色を一致させる
+      displayColor = wordColor;
+    }
+    items.push({ word: wordColor.name, color: displayColor.hex, answer: displayColor.name });
+  }
+  return items;
+}
+
+function calcBrainAge(scores, level) {
+  const cfg = LEVEL_CONFIG[level];
+  let base = cfg.ageBase;
+  // reaction (理想280ms, 上限750ms)
+  const rxNorm = Math.max(0, Math.min(1, (scores.reaction - 280) / 470));
+  base += rxNorm * 18;
+  base += (1 - scores.memory) * 18;
+  base += (1 - scores.calc) * 14;
+  base += (1 - scores.stroop) * 18;
+  return Math.round(Math.max(cfg.ageBase, Math.min(cfg.ageMax, base)));
+}
+
+function getBrainComment(age) {
+  if (age <= 30) return { emoji: "🧠✨", text: "素晴らしい！脳がとても若く活発に動いています。この調子で毎日の脳トレを続けましょう！" };
+  if (age <= 40) return { emoji: "🧠💪", text: "とても良い結果です！記憶力・反応力・計算力のバランスが取れています。" };
+  if (age <= 50) return { emoji: "🧠👍", text: "平均的な結果です。毎日少しずつ脳トレを続けることで改善が期待できます！" };
+  if (age <= 60) return { emoji: "🧠🌱", text: "改善の余地があります。毎日の脳トレで確実に若返ります！焦らず続けましょう。" };
+  return { emoji: "🧠🌟", text: "チャレンジありがとうございます！毎日の練習でどんどん若くなれます。一緒に頑張りましょう！" };
+}
+
+// ====== 画面 ======
+
+function IntroScreen({ onStart }) {
+  return (
+    <div className="card">
+      <div className="badge">🧠 無料 脳年齢チェック</div>
+      <h1>あなたの脳年齢を測定しよう！</h1>
+      <p className="desc">
+        4つのテストで、あなたの脳の若さを測定します。<br/>
+        まずは難易度を選んでください。
+      </p>
+      <div style={{display:"flex",gap:"8px",justifyContent:"center",marginBottom:"24px",flexWrap:"wrap"}}>
+        {["⚡ 反応速度","🔢 記憶力","➕ 計算力","🎨 識別力"].map(t => (
+          <span key={t} style={{background:"#F5F5F5",borderRadius:"20px",padding:"6px 14px",fontSize:"13px",fontWeight:700,color:"#555"}}>{t}</span>
+        ))}
+      </div>
+      <button className="btn btn-primary" onClick={onStart}>
+        難易度を選ぶ →
+      </button>
+      <p style={{fontSize:"12px",color:"#BBB",marginTop:"12px"}}>個人情報は一切収集しません</p>
+    </div>
+  );
+}
+
+function LevelSelectScreen({ onSelect }) {
+  return (
+    <div className="card">
+      <div className="badge">難易度を選択</div>
+      <h2>どのレベルに挑戦しますか？</h2>
+      <p className="desc" style={{marginBottom:"20px"}}>
+        まずは「やさしい」から試すのがおすすめです。<br/>
+        慣れてきたら上のレベルにチャレンジ！
+      </p>
+      {[1, 2, 3].map(lv => {
+        const c = LEVEL_CONFIG[lv];
+        return (
+          <button key={lv} className={`level-btn level-${lv}`} onClick={() => onSelect(lv)}>
+            <div className="level-icon">{c.icon}</div>
+            <div className="level-text">
+              <div className="level-title">レベル{lv}：{c.name}</div>
+              <div className="level-sub">{c.sub}</div>
+              <div className="level-stars">{c.stars}</div>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function TestHeader({ step, level, title, onRestart }) {
+  const c = LEVEL_CONFIG[level];
+  const [confirm, setConfirm] = useState(false);
+  return (
+    <>
+      <div className="test-topbar">
+        <div className="step-label" style={{marginBottom:0}}>
+          テスト {step} / 4
+          <span className={`level-pill ${c.pill}`}>Lv{level} {c.name}</span>
+        </div>
+        {onRestart && (
+          <button className="restart-btn" onClick={() => setConfirm(true)}>
+            ↩ 最初から
+          </button>
+        )}
+      </div>
+      <div className="progress-bar"><div className="progress-fill" style={{width:`${step * 25}%`}} /></div>
+      <h2>{title}</h2>
+      {confirm && (
+        <div className="confirm-overlay">
+          <div className="confirm-box">
+            <div className="confirm-title">最初からやり直しますか？</div>
+            <div className="confirm-text">今までの結果は消えて、難易度の選択画面に戻ります。</div>
+            <div className="confirm-row">
+              <button className="confirm-cancel" onClick={() => setConfirm(false)}>つづける</button>
+              <button className="confirm-ok" onClick={onRestart}>やり直す</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function ReactionTest({ level, onComplete, onRestart }) {
+  const cfg = LEVEL_CONFIG[level].reaction;
+  const TOTAL = cfg.rounds;
+  const [phase, setPhase] = useState("wait"); // wait | feint | go | early | trap | result
+  const [times, setTimes] = useState([]);
+  const [count, setCount] = useState(0);
+  const [penalty, setPenalty] = useState(0);
+  const [startTime, setStartTime] = useState(null);
+  const timerRef = useRef(null);
+  const feintRef = useRef(null);
+
+  const startRound = useCallback(() => {
+    setPhase("wait");
+    const delay = 1400 + Math.random() * 2000;
+    if (cfg.feint && Math.random() < 0.5) {
+      const feintAt = delay * (0.4 + Math.random() * 0.3);
+      feintRef.current = setTimeout(() => {
+        setPhase("feint");
+        setTimeout(() => setPhase("wait"), 550);
+      }, feintAt);
+    }
+    timerRef.current = setTimeout(() => {
+      setPhase("go");
+      setStartTime(Date.now());
+    }, delay);
+  }, [cfg.feint]);
+
+  useEffect(() => {
+    const t = setTimeout(startRound, 500);
+    return () => { clearTimeout(t); clearTimeout(timerRef.current); clearTimeout(feintRef.current); };
+  }, [startRound]);
+
+  const advance = (newTimes, newPenalty) => {
+    const newCount = count + 1;
+    setCount(newCount);
+    if (newCount >= TOTAL) {
+      const avg = newTimes.length
+        ? Math.round(newTimes.reduce((a,b)=>a+b,0) / newTimes.length)
+        : 700;
+      setTimeout(() => onComplete(avg + newPenalty * 80), 700);
+      setPhase("result");
+    } else {
+      setPhase("wait");
+      setTimeout(startRound, 800);
+    }
+  };
+
+  const handleTap = () => {
+    if (phase === "go") {
+      const rt = Date.now() - startTime;
+      const newTimes = [...times, rt];
+      setTimes(newTimes);
+      advance(newTimes, penalty);
+    } else if (phase === "feint") {
+      clearTimeout(timerRef.current);
+      const np = penalty + 1;
+      setPenalty(np);
+      setPhase("trap");
+      setTimeout(() => advance(times, np), 1000);
+    } else if (phase === "wait") {
+      clearTimeout(timerRef.current);
+      clearTimeout(feintRef.current);
+      setPhase("early");
+      setTimeout(() => { setPhase("wait"); setTimeout(startRound, 800); }, 1000);
+    }
+  };
+
+  const colors = { wait:"#DDD", feint:"#E74C3C", go:"#2ECC71", early:"#E74C3C", trap:"#E67E22", result:"#3498DB" };
+  const inner = { wait:"待機中...", feint:"押すな！", go:"タップ！", early:"早い！", trap:"引っかかった！", result:"完了" };
+
+  return (
+    <div className="card">
+      <TestHeader step={1} level={level} title="⚡ 反応速度テスト" onRestart={onRestart} />
+      <p className="desc">
+        円が<strong style={{color:"#2ECC71"}}>緑</strong>になったら速くタップ！
+        {cfg.feint && <><br/><strong style={{color:"#E74C3C"}}>赤のときは押してはいけません</strong></>}
+      </p>
+      <div style={{fontSize:"14px",color:"#999",marginBottom:"8px"}}>{count} / {TOTAL} 回</div>
+      <div className="reaction-target" style={{background: colors[phase] || "#DDD"}} onClick={handleTap}>
+        <span style={{fontSize:"15px",fontWeight:700}}>{inner[phase]}</span>
+      </div>
+      <p style={{fontSize:"13px",color:"#AAA"}}>
+        {times.length > 0 ? `最速: ${Math.min(...times)}ms` : "　"}
+        {penalty > 0 ? `（ミス ${penalty}回）` : ""}
+      </p>
+    </div>
+  );
+}
+
+function MemoryTest({ level, onComplete, onRestart }) {
+  const cfg = LEVEL_CONFIG[level].memory;
+  const DIGITS = cfg.digits;
+  const [round, setRound] = useState(0);
+  const [phase, setPhase] = useState("show");
+  const [numbers, setNumbers] = useState([]);
+  const [input, setInput] = useState("");
+  const [results, setResults] = useState([]);
+  const [feedback, setFeedback] = useState("");
+  const [showTimer, setShowTimer] = useState(cfg.showSeconds);
+  const timerRef = useRef(null);
+
+  const nextRound = useCallback((r) => {
+    const len = DIGITS[r];
+    const nums = Array.from({length: len}, () => Math.floor(Math.random()*10));
+    setNumbers(nums);
+    setPhase("show");
+    setInput("");
+    setFeedback("");
+    setShowTimer(cfg.showSeconds);
+    let t = cfg.showSeconds;
+    timerRef.current = setInterval(() => {
+      t--;
+      setShowTimer(t);
+      if (t <= 0) { clearInterval(timerRef.current); setPhase("input"); }
+    }, 1000);
+  }, [DIGITS, cfg.showSeconds]);
+
+  useEffect(() => {
+    nextRound(0);
+    return () => clearInterval(timerRef.current);
+  }, [nextRound]);
+
+  const handleInput = (n) => {
+    if (input.length >= numbers.length) return;
+    setInput(prev => prev + n);
+  };
+
+  const handleSubmit = () => {
+    const correct = numbers.join("") === input;
+    setFeedback(correct ? "ok" : "ng");
+    const newResults = [...results, correct ? 1 : 0];
+    setResults(newResults);
+    const nextR = round + 1;
+    if (nextR >= DIGITS.length) {
+      setTimeout(() => onComplete(newResults.filter(Boolean).length / DIGITS.length), 800);
+    } else {
+      setRound(nextR);
+      setTimeout(() => nextRound(nextR), 900);
+    }
+  };
+
+  return (
+    <div className="card">
+      <TestHeader step={2} level={level} title="🔢 記憶力テスト" onRestart={onRestart} />
+      {phase === "show" ? (
+        <>
+          <p className="desc">この数字を覚えてください！</p>
+          <div className="timer-circle">{showTimer}</div>
+          <div className="memory-grid">
+            {numbers.map((n, i) => <div key={i} className="memory-item">{n}</div>)}
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="desc">さっきの数字を順番に入力してください<br/><span style={{fontSize:"13px",color:"#AAA"}}>（{numbers.length}桁）</span></p>
+          <div className="big-number" style={{fontSize:"44px",letterSpacing:"6px",minHeight:"60px"}}>{input || "　"}</div>
+          <div className={`feedback ${feedback}`}>
+            {feedback === "ok" ? "✓ 正解！" : feedback === "ng" ? "✗ 不正解" : "　"}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px",marginTop:"8px"}}>
+            {[1,2,3,4,5,6,7,8,9,"←",0,"OK"].map(k => (
+              <button key={k} className="answer-btn" style={{padding:"18px",fontSize:"20px"}}
+                onClick={() => {
+                  if (k === "←") setInput(i => i.slice(0,-1));
+                  else if (k === "OK") handleSubmit();
+                  else handleInput(String(k));
+                }}
+                disabled={!!feedback}
+              >{k}</button>
+            ))}
+          </div>
+        </>
+      )}
+      <p style={{fontSize:"13px",color:"#AAA",marginTop:"8px"}}>{round + 1} / {DIGITS.length} 問</p>
+    </div>
+  );
+}
+
+function CalcTest({ level, onComplete, onRestart }) {
+  const cfg = LEVEL_CONFIG[level].calc;
+  const problems = useRef(shuffle(CALC_BANK[cfg.type]).slice(0, cfg.count)).current;
+  const [idx, setIdx] = useState(0);
+  const [results, setResults] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [options, setOptions] = useState([]);
+
+  useEffect(() => {
+    setOptions(generateCalcOptions(problems[idx].a, cfg.type));
+    setSelected(null);
+  }, [idx, problems, cfg.type]);
+
+  const handleAnswer = (val) => {
+    if (selected !== null) return;
+    setSelected(val);
+    const correct = val === problems[idx].a;
+    const newResults = [...results, correct ? 1 : 0];
+    setResults(newResults);
+    setTimeout(() => {
+      const next = idx + 1;
+      if (next >= problems.length) onComplete(newResults.filter(Boolean).length / problems.length);
+      else setIdx(next);
+    }, 800);
+  };
+
+  const prob = problems[idx];
+  return (
+    <div className="card">
+      <TestHeader step={3} level={level} title="➕ 計算テスト" onRestart={onRestart} />
+      <p className="desc">正しい答えを選んでください</p>
+      <div className="big-number">{prob.q} ＝ ?</div>
+      <div className="answer-grid">
+        {options.map(o => {
+          let cls = "answer-btn";
+          if (selected !== null) {
+            if (o === prob.a) cls += " correct";
+            else if (o === selected) cls += " wrong";
+          }
+          return <button key={o} className={cls} onClick={() => handleAnswer(o)}>{o}</button>;
+        })}
+      </div>
+      <p style={{fontSize:"13px",color:"#AAA",marginTop:"8px"}}>{idx + 1} / {problems.length} 問</p>
+    </div>
+  );
+}
+
+function StroopTest({ level, onComplete, onRestart }) {
+  const cfg = LEVEL_CONFIG[level].stroop;
+  const items = useRef(buildStroopItems(level)).current;
+  const pool = ALL_COLORS.slice(0, cfg.colors);
+  const LIMIT = cfg.limit;
+  const [idx, setIdx] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [feedback, setFeedback] = useState("");
+  const [timeLeft, setTimeLeft] = useState(LIMIT || 0);
+  const tickRef = useRef(null);
+  const resultsRef = useRef([]);
+  const idxRef = useRef(0);
+
+  const goNext = useCallback((newResults) => {
+    clearInterval(tickRef.current);
+    const next = idxRef.current + 1;
+    if (next >= items.length) {
+      onComplete(newResults.filter(Boolean).length / items.length);
+    } else {
+      idxRef.current = next;
+      setIdx(next);
+      setSelected(null);
+      setFeedback("");
+      if (LIMIT) setTimeLeft(LIMIT);
+    }
+  }, [items.length, onComplete, LIMIT]);
+
+  useEffect(() => {
+    if (!LIMIT) return;
+    setTimeLeft(LIMIT);
+    tickRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(tickRef.current);
+          const newResults = [...resultsRef.current, 0];
+          resultsRef.current = newResults;
+          setFeedback("ng");
+          setSelected("__timeout__");
+          setTimeout(() => goNext(newResults), 700);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(tickRef.current);
+  }, [idx, goNext, LIMIT]);
+
+  const handleAnswer = (colorName) => {
+    if (selected) return;
+    clearInterval(tickRef.current);
+    setSelected(colorName);
+    const correct = colorName === items[idx].answer;
+    setFeedback(correct ? "ok" : "ng");
+    const newResults = [...resultsRef.current, correct ? 1 : 0];
+    resultsRef.current = newResults;
+    setTimeout(() => goNext(newResults), 700);
+  };
+
+  const item = items[idx];
+  return (
+    <div className="card">
+      <TestHeader step={4} level={level} title="🎨 色識別テスト" onRestart={onRestart} />
+      <p className="desc">
+        文字の<strong>色</strong>は何色ですか？
+        {cfg.mismatch && <><br/><span style={{fontSize:"13px",color:"#AAA"}}>（文字の意味ではなく、色で答えて！）</span></>}
+      </p>
+      {LIMIT && (
+        <div style={{fontSize:"15px",fontWeight:700,color: timeLeft<=1 ? "#E74C3C" : "#FF8C42",marginBottom:"4px"}}>
+          ⏱ 残り {timeLeft} 秒
+        </div>
+      )}
+      <div className="stroop-word" style={{color: item.color}}>{item.word}</div>
+      <div className={`feedback ${feedback}`}>
+        {feedback === "ok" ? "✓ 正解！" : feedback === "ng" ? "✗ 不正解" : "　"}
+      </div>
+      <div className="color-grid" style={{gridTemplateColumns: pool.length >= 5 ? "1fr 1fr 1fr" : `repeat(${Math.min(pool.length,2)}, 1fr)`}}>
+        {pool.map(c => (
+          <button key={c.name} className="color-btn" style={{background: c.hex, opacity: selected ? 0.7 : 1}}
+            onClick={() => handleAnswer(c.name)} disabled={!!selected}>{c.name}</button>
+        ))}
+      </div>
+      <p style={{fontSize:"13px",color:"#AAA",marginTop:"8px"}}>{idx + 1} / {items.length} 問</p>
+    </div>
+  );
+}
+
+function ResultScreen({ scores, level, onRetry, onChangeLevel }) {
+  const brainAge = calcBrainAge(scores, level);
+  const { emoji, text } = getBrainComment(brainAge);
+  const c = LEVEL_CONFIG[level];
+
+  const scoreLabel = (v) => v >= 0.9 ? "🌟 優秀" : v >= 0.75 ? "👍 良好" : v >= 0.5 ? "📈 普通" : "🌱 要練習";
+  const rxLabel = (ms) => ms < 300 ? "🌟 超速い！" : ms < 400 ? "👍 速い" : ms < 550 ? "📈 普通" : "🌱 ゆっくり";
+
+  return (
+    <div className="card">
+      <div className="badge">{emoji} 測定完了 <span className={`level-pill ${c.pill}`}>Lv{level} {c.name}</span></div>
+      <h2>あなたの脳年齢は</h2>
+      <div className="result-age">{brainAge}</div>
+      <div className="result-label">歳</div>
+      <div className="result-comment">{text}</div>
+      <div style={{marginBottom:"20px"}}>
+        <div className="score-row"><span>⚡ 反応速度</span><span>{scores.reaction}ms — {rxLabel(scores.reaction)}</span></div>
+        <div className="score-row"><span>🔢 記憶力</span><span>{Math.round(scores.memory*100)}点 — {scoreLabel(scores.memory)}</span></div>
+        <div className="score-row"><span>➕ 計算力</span><span>{Math.round(scores.calc*100)}点 — {scoreLabel(scores.calc)}</span></div>
+        <div className="score-row"><span>🎨 識別力</span><span>{Math.round(scores.stroop*100)}点 — {scoreLabel(scores.stroop)}</span></div>
+      </div>
+      <button className="btn btn-primary" style={{background:"linear-gradient(135deg, #06C755, #04A244)",boxShadow:"0 6px 20px rgba(6,199,85,0.35)"}}>
+        📲 LINEで結果をシェア
+      </button>
+      {level < 3 && (
+        <button className="btn btn-primary" onClick={() => onChangeLevel(level + 1)}>
+          ⬆️ もっと上のレベルに挑戦
+        </button>
+      )}
+      <button className="btn btn-secondary" onClick={onChangeLevel ? () => onChangeLevel(null) : onRetry}>
+        🔄 難易度を選び直す
+      </button>
+      <p style={{fontSize:"12px",color:"#BBB",marginTop:"8px"}}>毎日チャレンジして脳を若く保とう！</p>
+    </div>
+  );
+}
+
+function App() {
+  const [screen, setScreen] = useState("intro");
+  const [level, setLevel] = useState(1);
+  const [scores, setScores] = useState({});
+
+  const startLevel = (lv) => {
+    setLevel(lv);
+    setScores({});
+    setScreen("reaction");
+  };
+
+  const restart = () => {
+    setScores({});
+    setScreen("level");
+  };
+
+  return (
+    <>
+      <style>{style}</style>
+      <div className="app">
+        <div className="blob blob1" />
+        <div className="blob blob2" />
+        <div className="blob blob3" />
+        {screen === "intro" && <IntroScreen onStart={() => setScreen("level")} />}
+        {screen === "level" && <LevelSelectScreen onSelect={startLevel} />}
+        {screen === "reaction" && (
+          <ReactionTest level={level} onRestart={restart} onComplete={(ms) => { setScores(s=>({...s,reaction:ms})); setScreen("memory"); }} />
+        )}
+        {screen === "memory" && (
+          <MemoryTest level={level} onRestart={restart} onComplete={(r) => { setScores(s=>({...s,memory:r})); setScreen("calc"); }} />
+        )}
+        {screen === "calc" && (
+          <CalcTest level={level} onRestart={restart} onComplete={(r) => { setScores(s=>({...s,calc:r})); setScreen("stroop"); }} />
+        )}
+        {screen === "stroop" && (
+          <StroopTest level={level} onRestart={restart} onComplete={(r) => { setScores(s=>({...s,stroop:r})); setScreen("result"); }} />
+        )}
+        {screen === "result" && (
+          <ResultScreen
+            scores={scores}
+            level={level}
+            onChangeLevel={(lv) => { if (lv) startLevel(lv); else setScreen("level"); }}
+          />
+        )}
+      </div>
+    </>
+  );
+}
+
+
+const rootEl = document.getElementById('root');
+ReactDOM.createRoot(rootEl).render(React.createElement(App));
+</script>
+</body>
+</html>
